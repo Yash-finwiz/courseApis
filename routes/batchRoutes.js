@@ -1,6 +1,5 @@
 const express = require('express');
 const Batch = require('../models/Batch');
-const Course = require('../models/Course');
 
 const router = express.Router();
 
@@ -8,11 +7,6 @@ const router = express.Router();
 router.post('/', async (req, res) => {
     try {
         const { courseId, startDate, endDate, studentIds } = req.body;
-
-        const course = await Course.findById(courseId);
-        if (!course) {
-            return res.status(404).send({ message: 'Course not found' });
-        }
 
         const batch = new Batch({
             course: courseId,
@@ -44,6 +38,31 @@ router.post('/:id/assign', async (req, res) => {
         res.send({ message: 'Students assigned successfully', batch });
     } catch (error) {
         res.status(400).send({ message: 'Error assigning students', error: error.message });
+    }
+});
+
+// Get a batch by ID with course details populated
+router.get('/:id', async (req, res) => {
+    try {
+        const batch = await Batch.findById(req.params.id).populate('course');
+
+        if (!batch) {
+            return res.status(404).send({ message: 'Batch not found' });
+        }
+
+        res.send(batch);
+    } catch (error) {
+        res.status(500).send({ message: 'Error fetching batch', error: error.message });
+    }
+});
+
+// Get all batches with course details populated
+router.get('/', async (req, res) => {
+    try {
+        const batches = await Batch.find().populate('course');
+        res.send(batches);
+    } catch (error) {
+        res.status(500).send({ message: 'Error fetching batches', error: error.message });
     }
 });
 
