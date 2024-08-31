@@ -3,10 +3,11 @@ const Course = require('../models/Course');
 
 const router = express.Router();
 
-// Create a new course
+// Create a new course with validation
 router.post('/', async (req, res) => {
     try {
         const course = new Course(req.body);
+        await course.validate(); // Explicit validation to catch any validation errors
         await course.save();
         res.status(201).send(course);
     } catch (error) {

@@ -1,12 +1,19 @@
 const express = require('express');
 const Batch = require('../models/Batch');
+const Course = require('../models/Course');
 
 const router = express.Router();
 
-// Create a new batch
+// Create a new batch with validation
 router.post('/', async (req, res) => {
     try {
         const { courseId, startDate, endDate, studentIds } = req.body;
+
+        // Validate course existence
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).send({ message: 'Course not found' });
+        }
 
         const batch = new Batch({
             course: courseId,
@@ -15,6 +22,7 @@ router.post('/', async (req, res) => {
             studentIds,
         });
 
+        await batch.validate(); // Explicit validation to catch any validation errors
         await batch.save();
         res.status(201).send(batch);
     } catch (error) {
@@ -22,7 +30,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Assign students to a batch
+// Assign students to a batch with validation
 router.post('/:id/assign', async (req, res) => {
     try {
         const batch = await Batch.findById(req.params.id);
@@ -32,6 +40,10 @@ router.post('/:id/assign', async (req, res) => {
         }
 
         const { studentIds } = req.body;
+        if (!Array.isArray(studentIds) || !studentIds.every(Number.isInteger)) {
+            return res.status(400).send({ message: 'Student IDs must be an array of integers' });
+        }
+
         batch.studentIds.push(...studentIds);
         await batch.save();
 
